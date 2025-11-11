@@ -27,6 +27,8 @@
 #include <linux/utsname.h>
 
 #include <linux/usb/composite.h>
+#include <linux/delay.h>
+#include <linux/kdev_t.h>
 
 
 /*
