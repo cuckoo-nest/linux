@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
         
       - name: Install dependencies
         run: |
@@ -41,19 +43,8 @@ jobs:
             u-boot-tools \
             netpbm
         
-      - name: Get toolchain file name
-        id: toolchain
-        run: |
-          TOOLCHAIN_URL="$(cat toolchain.txt)"
-          FILE_NAME="$(basename "$TOOLCHAIN_URL")"
-          echo "url=$TOOLCHAIN_URL" >> $GITHUB_OUTPUT
-          echo "name=$FILE_NAME" >> $GITHUB_OUTPUT
-          
-      - name: Cache toolchain
-        uses: actions/cache@v4
-        with:
-          key: ${{ steps.toolchain.outputs.name }}
-          path: ./toolchain
+      - name: Setup toolchain
+        uses: cuckoo-nest/toolchain@main
 
       - name: Run build script
         run: ./build.sh "${{ matrix.config }}" "${{ matrix.rootfs || './rootfs/gtvhacker' }}" "${{ matrix.logo || './logo/nest-logo-320x320.png' }}"

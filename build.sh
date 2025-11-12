@@ -49,11 +49,8 @@ if [[ ! -z "$NEEDED_TOOLS" ]]; then
   exit 1
 fi
 
-if [[ ! -e "$SCRIPT_DIR/toolchain/bin/arm-linux-gnueabi-gcc" ]]; then
-  mkdir -p "$SCRIPT_DIR/toolchain"
-  wget "$(cat "$SCRIPT_DIR/toolchain.txt")" -qO- | \
-    tar -xJvf - -C "$SCRIPT_DIR/toolchain" --strip-components=1
-fi
+# Setup the toolchain
+source toolchain/bootstrap.sh
 
 # Create the logo file
 (
@@ -63,12 +60,13 @@ fi
 		  pnmtoplainpnm > "$SCRIPT_DIR/linux/drivers/video/logo/logo_diamond_clut224.ppm"
 )
 
-export PATH="$SCRIPT_DIR/toolchain/bin:$PATH"
+# Pack the rootfs cpio
 (
   cd "$ROOTFS_PATH" || exit 1
   find . -print0 | cpio -ocv0 > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
 )
 
+# Build the kernel
 (
   cd "$SCRIPT_DIR/linux" || exit 1
   make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j"$(nproc)" distclean || exit 1
