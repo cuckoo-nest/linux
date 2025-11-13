@@ -63,7 +63,7 @@ source toolchain/bootstrap.sh
 # Pack the rootfs cpio
 (
   cd "$ROOTFS_PATH" || exit 1
-  find . -print0 | cpio -ocv0 > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
+  find . -print0 | cpio -ov0 > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
 )
 
 # Build the kernel
