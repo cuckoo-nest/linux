@@ -60,5 +60,7 @@ jobs:
         with:
           name: ${{ matrix.name || steps.artifact_name.outputs.name }}
           path: |
+            ./linux/arch/arm/boot/Image
             ./linux/arch/arm/boot/uImage
+            ./linux/arch/arm/boot/zImage
             ./initramfs_data.cpio

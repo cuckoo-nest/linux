@@ -8,7 +8,7 @@ echo $SCRIPT_DIR
 
 NEEDED_TOOLS=""
 DEF_CONFIG="$SCRIPT_DIR/configs/gtvhacker/defconfig"
-ROOTFS_PATH="$SCRIPT_DIR/rootfs"
+ROOTFS_PATH="$SCRIPT_DIR/rootfs/gtvhacker"
 LOGO_PATH="$SCRIPT_DIR/logo/nest-logo-320x320.png"
 
 if [[ -f "$1" ]]; then
@@ -63,7 +63,7 @@ source toolchain/bootstrap.sh
 # Pack the rootfs cpio
 (
   cd "$ROOTFS_PATH" || exit 1
-  find . -print0 | cpio -ocv0 > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
+  find . | tail -n +2 | cpio -ocv > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
 )
 
 # Build the kernel
