@@ -53,12 +53,12 @@ fi
 source toolchain/bootstrap.sh
 
 # Create the logo file
-(
-  echo "Converting \"$(basename "$LOGO_PATH")\" to \"logo_diamond_clut224.ppm\"..."
-	pngtopnm -mix "$LOGO_PATH" | \
-		  ppmquant -fs 223 | \
-		  pnmtoplainpnm > "$SCRIPT_DIR/linux/drivers/video/logo/logo_diamond_clut224.ppm"
-)
+#(
+#  echo "Converting \"$(basename "$LOGO_PATH")\" to \"logo_diamond_clut224.ppm\"..."
+#	pngtopnm -mix "$LOGO_PATH" | \
+#		  ppmquant -fs 223 | \
+#		  pnmtoplainpnm > "$SCRIPT_DIR/linux/drivers/video/logo/logo_diamond_clut224.ppm"
+#)
 
 # Pack the rootfs cpio
 (
