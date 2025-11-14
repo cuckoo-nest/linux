@@ -10,12 +10,20 @@ NEEDED_TOOLS=""
 DEF_CONFIG="$SCRIPT_DIR/configs/gtvhacker/defconfig"
 ROOTFS_PATH="$SCRIPT_DIR/rootfs/gtvhacker"
 LOGO_PATH="$SCRIPT_DIR/logo/nest-logo-320x320.png"
+BUILD_TEMP="$SCRIPT_DIR/build-temp"
+NEW_ROOTFS="$SCRIPT_DIR/initramfs_data.cpio"
+
+if [[ -d "$BUILD_TEMP" ]]; then
+  rm -rf "$BUILD_TEMP"
+fi
+
+mkdir -p "$BUILD_TEMP"
 
 if [[ -f "$1" ]]; then
   DEF_CONFIG="$1"
 fi
 
-if [[ -d "$2" ]]; then
+if [[ -e "$2" ]]; then
   ROOTFS_PATH="$2"
 fi
 
@@ -61,16 +69,21 @@ source toolchain/bootstrap.sh
 )
 
 # Pack the rootfs cpio
-(
-  cd "$ROOTFS_PATH" || exit 1
-  mkdir -p \
-  	media/system-config \
-	media/user-config \
-	media/data \
-	media/log \
-	media/scratch
-  find . -print0 | cpio -ov0 -H newc > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
-)
+#
+# Unpack with the following command in destination directory:
+# sudo cpio -H newc -ivdm --no-absolute-filenames -I "file_path.cpio"
+if [[ ! "$ROOTFS_PATH" == *".cpio" ]]; then
+  (
+    cd "$ROOTFS_PATH" || exit 1
+    mkdir -p $(cat "$SCRIPT_DIR/rootfs/folders.txt")
+    cp "$SCRIPT_DIR/rootfs/devices.cpio" "$NEW_ROOTFS"
+    find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc --owner=0:0 --reproducible --renumber-inodes -AO "$NEW_ROOTFS" || exit 1
+  )
+else
+  cp "$ROOTFS_PATH" "$NEW_ROOTFS"
+fi
+
+ROOTFS_PATH="$NEW_ROOTFS"
 
 # Build the kernel
 (
@@ -78,7 +91,5 @@ source toolchain/bootstrap.sh
   make ARCH=arm "CROSS_COMPILE=$TOOLCHAIN_CROSS-" -j"$(nproc)" distclean || exit 1
   cp "$DEF_CONFIG" ".config"
   echo "CONFIG_INITRAMFS_SOURCE=\"$ROOTFS_PATH\"" >> .config
-  echo "CONFIG_INITRAMFS_ROOT_UID=-1" >> .config
-  echo "CONFIG_INITRAMFS_ROOT_GID=-1" >> .config
   make ARCH=arm "CROSS_COMPILE=$TOOLCHAIN_CROSS-" -j"$(nproc)" uImage || exit 1
 )
