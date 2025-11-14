@@ -1,9 +1,5 @@
 #!/bin/sh
-
-mkdir /tmp/1
-mount /dev/mtdblock11 /tmp/1 -tjffs2
-
-/tmp1/myscript.sh
-umount /tmp/1
+(cat /dev/zero > /dev/fb0) || true
+/media/user-config/myscript.sh
 
 reboot
