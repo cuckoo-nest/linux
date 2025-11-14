@@ -1,8 +1,9 @@
 #!/bin/sh
-(cat /dev/zero > /dev/fb0) || true
+/bin/mount -o rw,noatime /dev/mtdblock11 /media/user-config -t jffs2
 
-mount /dev/mtdblock11 /media/user-config -t jffs2
+if [[ -f "/media/user-config/myscript.sh" ]]; then
+  source /media/user-config/myscript.sh
+fi
 
-/bin/sh /media/user-config/myscript.sh
-
-reboot
+/bin/umount /media/user-config
+/sbin/reboot
