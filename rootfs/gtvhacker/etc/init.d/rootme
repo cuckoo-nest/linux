@@ -1,7 +1,7 @@
 #!/bin/sh
 /bin/mount -o rw,noatime /dev/mtdblock11 /media/user-config -t jffs2
 
-if [[ -f "/media/user-config/myscript.sh" ]]; then
+if [ -f "/media/user-config/myscript.sh" ]; then
   source /media/user-config/myscript.sh
 fi
 
