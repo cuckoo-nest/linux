@@ -91,5 +91,12 @@ ROOTFS_PATH="$NEW_ROOTFS"
   make ARCH=arm "CROSS_COMPILE=$TOOLCHAIN_CROSS-" -j"$(nproc)" distclean || exit 1
   cp "$DEF_CONFIG" ".config"
   echo "CONFIG_INITRAMFS_SOURCE=\"$ROOTFS_PATH\"" >> .config
+  echo "CONFIG_INITRAMFS_ROOT_UID=0" >> .config
+  echo "CONFIG_INITRAMFS_ROOT_GID=0" >> .config
+  echo "CONFIG_INITRAMFS_COMPRESSION_NONE=y" >> .config
+  echo "CONFIG_INITRAMFS_COMPRESSION_GZIP=n" >> .config
+  echo "CONFIG_INITRAMFS_COMPRESSION_BZIP2=n" >> .config
+  echo "CONFIG_INITRAMFS_COMPRESSION_LZMA=n" >> .config
+  echo "CONFIG_INITRAMFS_COMPRESSION_LZO=n" >> .config
   make ARCH=arm "CROSS_COMPILE=$TOOLCHAIN_CROSS-" -j"$(nproc)" uImage || exit 1
 )
