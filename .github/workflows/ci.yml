@@ -59,7 +59,11 @@ jobs:
 
       - name: Run build script
         run: ./build.sh "${{ matrix.config }}" "${{ matrix.rootfs || './rootfs/gtvhacker' }}" "${{ matrix.logo || './logo/nest-logo-320x320.png' }}"
-        
+
+      - name: List cpio contents
+        run: |
+          cpio -ivt < ./linux/usr/initramfs_data.cpio
+
       - name: Get artifact name
         id: artifact_name
         run: |
@@ -75,4 +79,3 @@ jobs:
             ./linux/arch/arm/boot/uImage
             ./linux/arch/arm/boot/zImage
             ./linux/usr/initramfs_data.cpio
-            ./initramfs_data.cpio
