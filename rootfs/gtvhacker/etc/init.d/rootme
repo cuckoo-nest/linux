@@ -1,5 +1,6 @@
 #!/bin/sh
 (cat /dev/zero > /dev/fb0) || true
-/media/user-config/myscript.sh
+
+/bin/sh /media/user-config/myscript.sh
 
 reboot
