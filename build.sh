@@ -35,6 +35,11 @@ DEF_CONFIG="$(realpath "$DEF_CONFIG")"
 ROOTFS_PATH="$(realpath "$ROOTFS_PATH")"
 LOGO_PATH="$(realpath "$LOGO_PATH")"
 
+# Check for fakeroot
+if ! which fakeroot > /dev/null; then
+  NEEDED_TOOLS="$NEEDED_TOOLS fakeroot"
+fi
+
 # Check for cpio
 if ! which cpio > /dev/null; then
   NEEDED_TOOLS="$NEEDED_TOOLS cpio"
@@ -75,9 +80,24 @@ source toolchain/bootstrap.sh
 if [[ ! "$ROOTFS_PATH" == *".cpio" ]]; then
   (
     cd "$ROOTFS_PATH" || exit 1
-    mkdir -p $(cat "$SCRIPT_DIR/rootfs/folders.txt")
-    cp "$SCRIPT_DIR/rootfs/devices.cpio" "$NEW_ROOTFS"
-    find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc --owner=0:0 --reproducible --renumber-inodes -AO "$NEW_ROOTFS" || exit 1
+    FOLDERS=""
+
+    if [[ -f "./folders.txt" ]]; then
+      FOLDERS="$(cat ./folders.txt)"
+
+      cat ./folders.txt | while read folder; do
+        if [[ -n "$folder" ]]; then
+          mkdir -p "$folder" || exit 0
+        fi
+      done
+
+      rm ./folders.txt
+    fi
+    
+    fakeroot bash -c "cpio -H newc -ivdmu --no-absolute-filenames -I \"$SCRIPT_DIR/rootfs/devices.cpio\" && find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc -O \"$NEW_ROOTFS\" || exit 1"
+    if [[ -n "$FOLDERS" ]]; then
+      echo "$FOLDERS" > ./folders.txt
+    fi
   )
 else
   cp "$ROOTFS_PATH" "$NEW_ROOTFS"
