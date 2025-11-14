@@ -77,5 +77,6 @@ source toolchain/bootstrap.sh
   cd "$SCRIPT_DIR/linux" || exit 1
   make ARCH=arm "CROSS_COMPILE=$TOOLCHAIN_CROSS-" -j"$(nproc)" distclean || exit 1
   cp "$DEF_CONFIG" ".config"
+  echo "CONFIG_INITRAMFS_SOURCE=\"$ROOTFS_PATH\"" >> .config
   make ARCH=arm "CROSS_COMPILE=$TOOLCHAIN_CROSS-" -j"$(nproc)" uImage || exit 1
 )
