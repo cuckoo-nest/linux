@@ -63,6 +63,12 @@ source toolchain/bootstrap.sh
 # Pack the rootfs cpio
 (
   cd "$ROOTFS_PATH" || exit 1
+  mkdir -p \
+  	media/system-config \
+	media/user-config \
+	media/data \
+	media/log \
+	media/scratch
   find . -print0 | cpio -ov0 -H newc > "$SCRIPT_DIR/initramfs_data.cpio" || exit 1
 )
 
