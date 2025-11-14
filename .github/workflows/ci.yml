@@ -20,8 +20,19 @@ jobs:
           - config: ./configs/gtvhacker/defconfig
             rootfs: ./rootfs/gtvhacker
             logo: ./logo/gtvhacker.png
+
+          - name: gtvhacker_original_cpio
+            config: ./configs/gtvhacker/defconfig
+            rootfs: ./rootfs/nestdfuattack.cpio
+            logo: ./logo/gtvhacker.png
+
+          - name: gtvhacker_original_repacked
+            config: ./configs/gtvhacker/defconfig
+            rootfs: ./rootfs/repacked.cpio
+            logo: ./logo/gtvhacker.png
             
           - config: ./configs/rndis/defconfig
+            logo: ./logo/cuckoo.png
           
           - config: ./configs/j49/release_defconfig
           - config: ./configs/diamond/release_defconfig
@@ -39,6 +50,8 @@ jobs:
           
           sudo apt update
           sudo apt install -y \
+            kmod \
+            fakeroot \
             cpio \
             u-boot-tools \
             netpbm
@@ -48,7 +61,11 @@ jobs:
 
       - name: Run build script
         run: ./build.sh "${{ matrix.config }}" "${{ matrix.rootfs || './rootfs/gtvhacker' }}" "${{ matrix.logo || './logo/nest-logo-320x320.png' }}"
-        
+
+      - name: List cpio contents
+        run: |
+          cpio -ivt < ./linux/usr/initramfs_data.cpio
+
       - name: Get artifact name
         id: artifact_name
         run: |
@@ -63,4 +80,4 @@ jobs:
             ./linux/arch/arm/boot/Image
             ./linux/arch/arm/boot/uImage
             ./linux/arch/arm/boot/zImage
-            ./initramfs_data.cpio
+            ./linux/usr/initramfs_data.cpio

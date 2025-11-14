@@ -1,43 +1,19 @@
 #!/bin/sh
-#GTVHacker.com
-#Spawns a telnet shell on the NEST
+/bin/sleep 2
 
-mkdir /tmp/1
-mount /dev/mtdblock7 /tmp/1 -tjffs2
+/bin/mount -a
 
-cp /bin/busybox2 /tmp/1/bin/busybox2
-cp /bin/autossh /tmp/1/bin/autossh
-chmod 777 /tmp/1/bin/busybox2
-chmod 777 /tmp/1/bin/autossh
+for f in /sys/devices/virtual/usb_composite/*/enable; do
+  [ -f "$f" ] && /bin/echo 0 > "$f"
+done
 
-cp /bin/sshconnect /tmp/1/bin/sshconnect
-chmod +x /tmp/1/bin/sshconnect
+/bin/echo peripheral > /sys/devices/platform/musb-omap2430.0/musb-hdrc.0/mode
 
-cp /bin/dropbearmulti /tmp/1/bin/dropbearmulti
-ln -s /bin/dropbearmulti /tmp/1/bin/dropbear
-ln -s /bin/dropbearmulti /tmp/1/bin/dropbearkey
-ln -s /bin/dropbearmulti /tmp/1/bin/ssh
-ln -s /bin/dropbearmulti /tmp/1/bin/dropbearconvert
+# load g_ether with example MACs
+/bin/modprobe -r g_ether   # remove if already loaded
+/bin/modprobe g_ether host_addr=00:90:27:A7:7F:B5 dev_addr=00:90:27:A7:7F:B6 idVendor=0x04e8 idProduct=0x6863 iManufacturer="Cuckoo Nest" iProduct="RNDIS Gadget"
 
-chmod +x /tmp/1/bin/dropbearmulti
-chmod +x /tmp/1/bin/dropbear
-chmod +x /tmp/1/bin/dropbearkey
-chmod +x /tmp/1/bin/ssh
-chmod +x /tmp/1/bin/dropbearconvert
+/bin/ip link set usb0 up
+/bin/ip addr add 169.254.13.37/16 dev usb0
 
-mkdir /tmp/1/etc/dropbear
-/tmp/1/bin/dropbearkey -t dss -f /tmp/1/etc/dropbear/dropbear_dss_host_key
-/tmp/1/bin/dropbearkey -t rsa -s 2048 -f /tmp/1/etc/dropbear/dropbear_rsa_host_key
-/tmp/1/bin/dropbearkey -t ecdsa -s 521 -f /tmp/1/etc/dropbear/dropbear_ecdsa_host_key
-
-cat /tmp/1/etc/shadow | grep -v root > /tmp/1/etc/shadow
-echo "root:MkxPNEHFJvbEI:16243:0:99999:7:::" >> /tmp/1/etc/shadow
-
-#cat /tmp/1/etc/init.d/rcS|grep -v "sshconnect"|grep -v "dropbear" > /tmp/1/etc/init.d/rcS
-
-echo "/bin/dropbear" >> /tmp/1/etc/init.d/rcS
-
-echo "/bin/sshconnect" >> /tmp/1/etc/init.d/rcS
-
-umount /tmp/1
-reboot
+/bin/dropbear -B
