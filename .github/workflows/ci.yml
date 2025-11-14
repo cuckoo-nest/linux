@@ -63,4 +63,5 @@ jobs:
             ./linux/arch/arm/boot/Image
             ./linux/arch/arm/boot/uImage
             ./linux/arch/arm/boot/zImage
+            ./linux/usr/initramfs_data.cpio
             ./initramfs_data.cpio
