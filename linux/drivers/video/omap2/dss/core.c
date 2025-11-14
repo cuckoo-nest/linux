@@ -321,10 +321,9 @@ void dss_clk_disable(enum dss_clock clks)
 	if (cpu_is_omap34xx()) {
 		unsigned num_clks = count_clk_bits(clks);
 
-		WARN(core.num_clks_enabled < num_clks,
-			"Attempting to dss_clk_disable more clocks than are active.");
+		BUG_ON(core.num_clks_enabled < num_clks);
 
-		if (core.num_clks_enabled <= num_clks)
+		if (core.num_clks_enabled == num_clks)
 			save_all_ctx();
 	}
 

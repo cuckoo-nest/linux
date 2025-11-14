@@ -8,4 +8,3 @@ obj-$(CONFIG_PANEL_TOPPOLY_TDO35S) += panel-toppoly-tdo35s.o
 obj-$(CONFIG_PANEL_TPO_TD043MTEA1) += panel-tpo-td043mtea1.o
 obj-$(CONFIG_PANEL_ACX565AKM) += panel-acx565akm.o
 obj-$(CONFIG_PANEL_TIANMA_TM025ZDZ01) += panel-tianma-tm025zdz01.o
-obj-$(CONFIG_PANEL_RENESAS_61529A1) += panel-renesas-r61529a1.o

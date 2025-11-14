@@ -138,8 +138,6 @@
 #include <linux/regulator/machine.h>
 #include <linux/input/pwm-beeper.h>
 #include <linux/lm3530_bl.h>
-#include <linux/lm3530_bl.h>
-#include <linux/r61529a1.h>
 
 #include <mach/board-diamond-gpio.h>
 #include <mach/board-j49-gpio.h>
@@ -225,11 +223,11 @@
 
 #define DIAMOND_USB_VENDOR_STRING		NEST_USB_VENDOR_STRING
 #define DIAMOND_USB_PRODUCT_STRING		"Learning Thermostat"
-#define DIAMOND_USB_SERIAL_STRING_SIZE	((sizeof(u8) * 16) + 1)
+#define DIAMOND_USB_SERIAL_STRING_SIZE	((sizeof(u64) * 2) + 1)
 
 #define J49_USB_VENDOR_STRING			NEST_USB_VENDOR_STRING
 #define J49_USB_PRODUCT_STRING			"Learning Thermostat"
-#define J49_USB_SERIAL_STRING_SIZE		((sizeof(u8) * 16) + 1)
+#define J49_USB_SERIAL_STRING_SIZE		((sizeof(u64) * 2) + 1)
 
 #define NEST_USB_VENDOR_ID				0x2464
 
@@ -266,8 +264,7 @@ enum {
 	DISPLAY_2_1_DATA			= 8,
 	DISPLAY_2_2_DATA			= 9,
 	DISPLAY_2_3_DATA			= 10,
-	DISPLAY_2_4_DATA			= 11,
-	DISPLAY_2_11_DATA			= 12
+	DISPLAY_2_4_DATA			= 11
 };
 
 struct diamond_init_data {
@@ -357,9 +354,6 @@ static void __init display_2_0_spi_init(void);
 static void __init display_2_0_net_init(void);
 
 static void __init display_2_1_mux_init(void);
-
-static void __init display_2_11_display_init(void);
-static void __init display_2_11_regulator_init(void);
 
 /* Global Variables */
 
@@ -560,25 +554,6 @@ static struct diamond_init_data display_2_4_data __initdata = {
 	.usb_init			= diamond_usb_init
 };
 
-static struct diamond_init_data display_2_11_data __initdata = {
-	.name				= "D2D",
-	.add_devices		= display_2_0_add_devices,
-	.backplate_init		= diamond_backplate_init,
-	.clk_init			= diamond_clk_init,
-	.display_init		= display_2_11_display_init,
-	.flash_init			= diamond_flash_init,
-	.i2c_init			= display_2_0_i2c_init,
-	.mmc_init			= diamond_1_5_mmc_init,
-	.mux_init			= display_2_1_mux_init,
-	.net_init			= display_2_0_net_init,
-	.piezo_init			= diamond_1_5_piezo_init,
-	.power_init			= diamond_1_6_power_init,
-	.regulator_init		= display_2_11_regulator_init,
-	.serial_init		= diamond_serial_init,
-	.spi_init			= display_2_0_spi_init,
-	.usb_init			= diamond_usb_init
-};
-
 static struct diamond_init_data *diamond_init_data[] __initdata = {
 	[DIAMOND_DEVELOPMENT_DATA]	= &diamond_development_data,
 	[DIAMOND_1_4_DATA]			= &diamond_1_4_data,
@@ -591,8 +566,7 @@ static struct diamond_init_data *diamond_init_data[] __initdata = {
 	[DISPLAY_2_1_DATA]			= &display_2_1_data,
 	[DISPLAY_2_2_DATA]			= &display_2_2_data,
 	[DISPLAY_2_3_DATA]			= &display_2_3_data,
-	[DISPLAY_2_4_DATA]			= &display_2_4_data,
-	[DISPLAY_2_11_DATA]			= &display_2_11_data
+	[DISPLAY_2_4_DATA]			= &display_2_4_data
 };
 
 static bool lcd_enabled = false;
@@ -862,6 +836,7 @@ static struct mtd_partition diamond_nand_partitions[] = {
 		.name           = "ipl",
 		.offset         = 0,
 		.size           = DIAMOND_IPL_RAW_NAND_SIZE,
+		.mask_flags     = MTD_WRITEABLE		// Read-only
 	},
 	{
 		.name           = "spl0",
@@ -979,11 +954,8 @@ static struct omapfb_platform_data diamond_320_320_omapfb_config = {
 			 .size 			= diamond_roundup(320 * 320 *
 									  DIAMOND_VFB_BPP *
 									  DIAMOND_VFB_COUNT,
-									  DIAMOND_VFB_ROUND),
+									  DIAMOND_VFB_ROUND)
 		 }
-	},
-	.lcd 					={
-		.rotation	= 0
 	}
 };
 
@@ -1178,69 +1150,6 @@ static struct omap_dss_device diamond_1_5_lcd_device = {
 	.type								= OMAP_DISPLAY_TYPE_DPI,
 	.platform_enable					= NULL,
 	.platform_disable					= NULL,
-};
-
-/*
-	tast = 0
-	taht = 10
-	tcs = 20
-	trcs = 170
-	tcsf= 20
-	twc = 50
-	twrh = 20
-	twrl = 20
-	trc = 450
-	trdh = 250
-	trdl = 170
-	twds = 15
-	twdh = 15
-	tracc = 150
-	trod = 10
-*/
-
-static struct omap_dss_device display_2_11_lcd_device = {
-	.name								= "Renesas R61529a1",
-	.driver_name						= "renesas_r61529a1",
-	.phy.rfbi.data_lines				= 16,
-	.phy.rfbi.channel					= OMAP_DSS_CHANNEL_LCD,
-	.ctrl.pixel_size					= 24,
-	.ctrl.rfbi_timings					= {
-		.cs_on_time = 0,
-		.cs_off_time = (250+170)*1000,
-		.we_on_time = 20*1000,
-		.we_off_time = (40)*1000,
-		.re_on_time = 250*1000,
-		.re_off_time = (250+170)*1000,
-		.we_cycle_time = (52)*1000,
-		.re_cycle_time = (250+170)*1000,
-		.cs_pulse_width = (250+170+50)*1000,
-		.access_time = (250+170)*1000,
-	},
-	.type								= OMAP_DISPLAY_TYPE_DBI,
-	.panel.timings						= {
-		.x_res		= 320,
-		.y_res		= 320,
-		.pixel_clock	= 7180,
-		.hsw		= 2,
-		.hfp		= 8,
-		.hbp		= 8,
-
-		.vsw		= 2,
-		.vfp		= 8,
-		.vbp		= 8,
-	},
-	.platform_enable					= NULL,
-	.platform_disable					= NULL,
-};
-
-static struct r61529a1_platform_data r61529a1_config = {
-	.reset = {
-		.gpio				= DIAMOND_GPIO_LCD_RESETB,
-		.inverted			= false
-	},
-	.regulator = {
-		 .vcc				= "lcd2v8",
-	},
 };
 
 /*
@@ -2314,23 +2223,25 @@ static struct platform_device *display_2_0_devices[] __initdata = {
 /**
  * diamond_serial_number_init - initialize the board serial number used for USB
  *
- * This routine copies the Diamond serial number from u-boot, which is passed in
- * as an extention to the ATAG_SERIAL tag in the ATAG parameters. It is a NULL-
- * terminated C string used by the USB dynamic multi-function composite gadget
- * interface.
+ * This routine attempts to decode the board serial number, passed
+ * from the boot loader via ATAGs, and format it into a
+ * NULL-terminated C string used by the USB dynamic multi-function
+ * composite gadget interface.
  *
+ * Successful implementation of this relies on the fact that
+ * manufacturing is restricting the serial number format to 15 decimal
+ * digits which we represent as a zero-padded, right-aligned
+ * hexadecimal number. Were that not the case, the serial number would
+ * have to be passed as a string on the kernel command line or we'd
+ * have to have a u-boot environment driver in the kernel.
  */
 static void __init diamond_serial_number_init(void)
 {
-	if (strlen(system_diamond_serial) > 0) {
-		strncpy(diamond_serial_number, system_diamond_serial, DIAMOND_USB_SERIAL_STRING_SIZE);
-	} else {
-		snprintf(diamond_serial_number,
+	snprintf(diamond_serial_number,
 			 DIAMOND_USB_SERIAL_STRING_SIZE,
 			 "%.07X%.08X",
 			 system_serial_high,
 			 system_serial_low);
-	}
 }
 #else
 static inline void diamond_serial_number_init(void) { return; }
@@ -2656,35 +2567,6 @@ static void __init diamond_1_5_display_init(void)
 	diamond_dss_devices[0] = &diamond_1_5_lcd_device;
 	diamond_dss_data.default_device = &diamond_1_5_lcd_device;
 }
-static void __init display_2_11_display_init(void)
-{
-	int value;
-
-	diamond_gpio_try_input(DIAMOND_GPIO_LCD_ID, goto done);
-
-	value = gpio_get_value(DIAMOND_GPIO_LCD_ID);
-
-	gpio_free(DIAMOND_GPIO_LCD_ID);
-
-	if (value == LCD_ID_SAMSUNG)
-	{
-		omapfb_set_platform_data(&diamond_320_320_omapfb_config);
-		diamond_dss_devices[0] = &diamond_1_5_lcd_device;
-		diamond_dss_data.default_device = &diamond_1_5_lcd_device;
-	}
-	else
-	{
-		//renesas display driver
-		display_2_11_lcd_device.data = &r61529a1_config;
-
-		diamond_320_320_omapfb_config.lcd.rotation = 2;
-		omapfb_set_platform_data(&diamond_320_320_omapfb_config);
-		diamond_dss_devices[0] = &display_2_11_lcd_device;
-		diamond_dss_data.default_device = &display_2_11_lcd_device;
-	}
- done:
-	return;
-}
 
 static void __init diamond_development_regulator_init(void)
 {
@@ -2748,11 +2630,6 @@ static void __init diamond_1_4_regulator_init(void)
 static void __init diamond_1_5_regulator_init(void)
 {
 	diamond_prototype_regulator_init(&diamond_1_5_lcd_device.dev);
-}
-
-static void __init display_2_11_regulator_init(void)
-{
-	diamond_prototype_regulator_init(&display_2_11_lcd_device.dev);
 }
 
 static void __init diamond_1_4_power_init(void)
@@ -2942,11 +2819,8 @@ const struct diamond_init_data * __init __diamond_init_data(const char *family, 
 				} else if (revision == 3) {
 					data = diamond_init_data[DISPLAY_2_3_DATA];
 
-				} else if ((revision >= 4) && (revision < 11)) {
+				} else if (revision >= 4) {
 					data = diamond_init_data[DISPLAY_2_4_DATA];
-
-				} else if (revision >= 11) {
-					data = diamond_init_data[DISPLAY_2_11_DATA];
 
 				} else if (revision != NL_MODEL_UNKNOWN) {
 					machine_warn("Unsupported model revision '%d'\n", revision);

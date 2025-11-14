@@ -10,8 +10,6 @@
 #
 # Copyright (C) 1995-2001 by Russell King
 
-.NOTPARALLEL:
-
 LDFLAGS_vmlinux	:=-p --no-undefined -X
 ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
 LDFLAGS_vmlinux	+= --be8

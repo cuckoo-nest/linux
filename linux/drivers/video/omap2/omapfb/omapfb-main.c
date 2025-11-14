@@ -41,14 +41,11 @@
 #define OMAPFB_PLANE_XRES_MIN		8
 #define OMAPFB_PLANE_YRES_MIN		8
 
-#define NSECS_IN_SECOND 1000000000
-
 static char *def_mode;
 static char *def_vram;
 static int def_vrfb;
 static int def_rotate;
 static int def_mirror;
-static struct timespec last_frame;
 
 #ifdef DEBUG
 unsigned int omapfb_debug;
@@ -1100,33 +1097,8 @@ static int omapfb_pan_display(struct fb_var_screeninfo *var,
 	struct omapfb_info *ofbi = FB2OFB(fbi);
 	struct fb_var_screeninfo new_var;
 	int r;
-	int w, h;
-	struct omap_dss_device *display = fb2display(fbi);
 
 	DBG("pan_display(%d)\n", FB2OFB(fbi)->id);
-
-#ifdef CONFIG_FB_OMAP2_DEBUG_SUPPORT
-	{
-		struct timespec t;
-		uint32_t deltaNs;
-
-		getrawmonotonic(&t);
-		if (t.tv_nsec < last_frame.tv_nsec)
-		{
-			deltaNs = NSECS_IN_SECOND + t.tv_nsec - last_frame.tv_nsec;
-		}
-		else //no overflow
-		{
-			deltaNs = t.tv_nsec - last_frame.tv_nsec;
-		}
-
-		ofbi->fps = NSECS_IN_SECOND / deltaNs;
-
-		last_frame.tv_sec = t.tv_sec;
-		last_frame.tv_nsec = t.tv_nsec;
-
-	}
-#endif
 
 	if (var->xoffset == fbi->var.xoffset &&
 	    var->yoffset == fbi->var.yoffset)
@@ -1823,9 +1795,6 @@ static int omapfb_fb_init(struct omapfb2_device *fbdev, struct fb_info *fbi)
 	struct omapfb_info *ofbi = FB2OFB(fbi);
 	int r = 0;
 
-
-	getrawmonotonic(&last_frame);
-
 	fbi->fbops = &omapfb_ops;
 	fbi->flags = FBINFO_FLAG_DEFAULT;
 	fbi->pseudo_palette = fbdev->pseudo_palette;
@@ -1868,11 +1837,7 @@ static int omapfb_fb_init(struct omapfb2_device *fbdev, struct fb_info *fbi)
 
 	if (display) {
 		u16 w, h;
-		struct omapfb_platform_data *opd;
-		int rotation;
-		opd = fbdev->dev->platform_data;
-		ofbi->rotation[0] = ( ofbi->rotation[0] + opd->lcd.rotation ) % 4;
-		rotation = (var->rotate + ofbi->rotation[0]) % 4;
+		int rotation = (var->rotate + ofbi->rotation[0]) % 4;
 
 		display->driver->get_resolution(display, &w, &h);
 
@@ -2018,8 +1983,6 @@ static int omapfb_create_framebuffers(struct omapfb2_device *fbdev)
 		ofbi->num_overlays = 1;
 	}
 
-	DBG("attempting to allocate fbmems\n");
-
 	/* allocate fb memories */
 	r = omapfb_allocate_all_fbs(fbdev);
 	if (r) {
@@ -2070,8 +2033,6 @@ static int omapfb_create_framebuffers(struct omapfb2_device *fbdev)
 			return r;
 		}
 	}
-
-	DBG("attempting to enable overlay\n");
 
 	/* Enable fb0 */
 	if (fbdev->num_fbs > 0) {

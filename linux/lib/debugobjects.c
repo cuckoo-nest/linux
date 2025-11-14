@@ -249,17 +249,14 @@ static struct debug_bucket *get_bucket(unsigned long addr)
 
 static void debug_print_object(struct debug_obj *obj, char *msg)
 {
-	struct debug_obj_descr *descr = obj->descr;
 	static int limit;
 
-	if (limit < 5 && descr != descr_test) {
-		void *hint = descr->debug_hint ?
-			descr->debug_hint(obj->object) : NULL;
+	if (limit < 5 && obj->descr != descr_test) {
 		limit++;
 		WARN(1, KERN_ERR "ODEBUG: %s %s (active state %u) "
-				 "object type: %s hint: %pS\n",
+				 "object type: %s\n",
 			msg, obj_states[obj->state], obj->astate,
-			descr->name, hint);
+			obj->descr->name);
 	}
 	debug_objects_warnings++;
 }

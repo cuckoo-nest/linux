@@ -743,7 +743,6 @@
 struct s6d05a1_device {
 	int 						enabled:1,
 								suspended:1;
-	spinlock_t                  device_lock;
 	struct spi_device *			spi;
 	struct omap_dss_device *	dssdev;
 	struct regulator *			vcc_reg;
@@ -1577,13 +1576,9 @@ static int tm025zdz01_dss_power_on(struct omap_dss_device *dssdev)
 {
     struct s6d05a1_device * id = &s6d05a1_dev;
     int status = 0;
-    unsigned long flags;
 
-    spin_lock_irqsave(&id->device_lock, flags);
     if (!id->enabled)
     {
-        id->enabled = true;
-        spin_unlock_irqrestore(&id->device_lock, flags);
         status = omapdss_dpi_display_enable(dssdev);
 
 	 if (id->vcc_reg) {
@@ -1596,11 +1591,8 @@ static int tm025zdz01_dss_power_on(struct omap_dss_device *dssdev)
 
         s6d05a1_power_on(id);
 
+        id->enabled = true;
         dssdev->state = OMAP_DSS_DISPLAY_ACTIVE;
-    }
-    else
-    {
-        spin_unlock_irqrestore(&id->device_lock, flags);
     }
 
     done:
@@ -1615,13 +1607,9 @@ static void	tm025zdz01_dss_disable(struct omap_dss_device *dssdev)
 static void tm025zdz01_dss_power_off(struct omap_dss_device *dssdev)
 {
     struct s6d05a1_device * id = &s6d05a1_dev;
-    unsigned long flags;
 
-    spin_lock_irqsave(&id->device_lock, flags);
     if (id->enabled)
     {
-        id->enabled = false;
-        spin_unlock_irqrestore(&id->device_lock, flags);
         s6d05a1_power_off(id);
 
         if (id->vcc_reg) {
@@ -1630,11 +1618,8 @@ static void tm025zdz01_dss_power_off(struct omap_dss_device *dssdev)
 
         omapdss_dpi_display_disable(dssdev);
 
+        id->enabled = false;
         dssdev->state = OMAP_DSS_DISPLAY_DISABLED;
-    }
-    else
-    {
-        spin_unlock_irqrestore(&id->device_lock, flags);
     }
 
 }
@@ -1693,8 +1678,6 @@ static int s6d05a1_spi_probe(struct spi_device *spi)
 	struct device *dev = &spi->dev;
 	struct s6d05a1_device *id = NULL;
 	int status = 0;
-
-	id->device_lock = SPIN_LOCK_UNLOCKED;
 
 	// Check to ensure the specified platform SPI clock doesn't exceed
 	// the allowed maximum.

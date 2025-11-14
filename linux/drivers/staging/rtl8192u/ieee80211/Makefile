@@ -49,7 +49,7 @@ INSTALL_PREFIX :=
 all: modules
 
 modules:
-	$(MAKE) -C $(KSRC) M=$(PWD) CC="$(CC)" modules
+	$(MAKE) -C $(KSRC) M=$(PWD) CC=$(CC) modules
 
 install: modules
 	rm -fr $(MODDESTDIR)

@@ -127,12 +127,9 @@ static int vfp_notifier(struct notifier_block *self, unsigned long cmd, void *v)
 #endif
 
 		/*
-		 * Always disable VFP and save the vfpstate(if VFP is currently enabled)
-		 * In vfp_support_entry we will always perform the vfpstate restore
+		 * Always disable VFP so we can lazily save/restore the
+		 * old state.
 		 */
-		if (fpexc & FPEXC_EN)
-			vfp_save_state(&current_thread_info()->vfpstate, fpexc);
-
 		fmxr(FPEXC, fpexc & ~FPEXC_EN);
 		return NOTIFY_DONE;
 	}

@@ -11,8 +11,6 @@
 # Copyright (C) 1995-2002 Russell King
 #
 
-.NOTPARALLEL:
-
 MKIMAGE         := $(srctree)/scripts/mkuboot.sh
 
 ifneq ($(MACHINE),)

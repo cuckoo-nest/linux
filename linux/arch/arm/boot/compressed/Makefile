@@ -4,8 +4,6 @@
 # create a compressed vmlinuz image from the original vmlinux
 #
 
-.NOTPARALLEL: 
-
 AFLAGS_head.o += -DTEXT_OFFSET=$(TEXT_OFFSET)
 HEAD	= head.o
 OBJS	= misc.o decompress.o
@@ -120,4 +118,3 @@ $(obj)/font.c: $(FONTC)
 
 $(obj)/vmlinux.lds: $(obj)/vmlinux.lds.in arch/arm/boot/Makefile $(KCONFIG_CONFIG)
 	@sed "$(SEDFLAGS)" < $< > $@
-

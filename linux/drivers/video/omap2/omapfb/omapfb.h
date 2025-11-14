@@ -69,9 +69,6 @@ struct omapfb_info {
 	enum omap_dss_rotation_type rotation_type;
 	u8 rotation[OMAPFB_MAX_OVL_PER_FB];
 	bool mirror;
-#ifdef CONFIG_FB_OMAP2_DEBUG_SUPPORT
-	int fps;
-#endif
 };
 
 struct omapfb2_device {

@@ -1107,15 +1107,11 @@ void dss_setup_partial_planes(struct omap_dss_device *dssdev,
 	mc->w = w;
 	mc->h = h;
 
-	dss_clk_enable(DSS_CLK_ICK | DSS_CLK_FCK1);
-
 	configure_dispc();
 
 	mc->do_manual_update = false;
 
 	spin_unlock_irqrestore(&dss_cache.lock, flags);
-
-	dss_clk_disable(DSS_CLK_ICK | DSS_CLK_FCK1);
 
 	*xi = x;
 	*yi = y;

@@ -6,8 +6,6 @@
 # for more details.
 #
 
-.NOTPARALLEL:
-
 MKIMAGE		:= $(srctree)/scripts/mkuboot.sh
 
 extra-y		:= vmlinux.bin vmlinux.gz

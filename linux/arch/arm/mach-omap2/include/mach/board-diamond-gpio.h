@@ -51,8 +51,7 @@
 #define DIAMOND_GPIO_LCD_ENABLE_VDD			101		// 4.5  (Development)
 #define	DIAMOND_GPIO_LCD_ID					105		// 4.9  (Prototype + EVT)
 #define DIAMOND_GPIO_LCD_RESETB				109		// 4.13
-#define LCD_ID_SAMSUNG						1
-#define LCD_ID_RENESAS						0
+
 /*
  * Diamond Charging and Power Management GPIO Control Signals
  */

@@ -98,7 +98,6 @@ struct omap_usb_config {
 struct omap_lcd_config {
 	char panel_name[16];
 	char ctrl_name[16];
-	u8   rotation;
 	s16  nreset_gpio;
 	u8   data_lines;
 };

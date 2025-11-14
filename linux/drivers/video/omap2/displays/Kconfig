@@ -63,10 +63,4 @@ config PANEL_TIANMA_TM025ZDZ01
        help
          Tianma TM025ZDZ01 320 x 320 TFT LCD Panel
 
-config PANEL_RENESAS_61529A1
-       tristate "Renesas 61529a1 LCD Panel driver"
-       depends on OMAP2_DSS
-       help
-         Renesas 61529a1 320 x 320 TFT LCD Panel
-
 endmenu

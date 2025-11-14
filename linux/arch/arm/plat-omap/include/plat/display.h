@@ -188,7 +188,7 @@ struct rfbi_timings {
 };
 
 void omap_rfbi_write_command(const void *buf, u32 len);
-void omap_rfbi_read_data(u8 cmd, void *buf, u32 len);
+void omap_rfbi_read_data(void *buf, u32 len);
 void omap_rfbi_write_data(const void *buf, u32 len);
 void omap_rfbi_write_pixels(const void __iomem *buf, int scr_width,
 		u16 x, u16 y,
@@ -548,11 +548,6 @@ int dpi_check_timings(struct omap_dss_device *dssdev,
 
 int omapdss_sdi_display_enable(struct omap_dss_device *dssdev);
 void omapdss_sdi_display_disable(struct omap_dss_device *dssdev);
-
-void omapdss_rfbi_write_command(const void *buf, u32 len);
-void omapdss_rfbi_write_data(const void *buf, u32 len);
-
-void omapdss_rfbi_read_data(u8 cmd, void *buf, u32 len);
 
 int omapdss_rfbi_display_enable(struct omap_dss_device *dssdev);
 void omapdss_rfbi_display_disable(struct omap_dss_device *dssdev);

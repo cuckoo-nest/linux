@@ -91,9 +91,6 @@ EXPORT_SYMBOL(system_serial_low);
 unsigned int system_serial_high;
 EXPORT_SYMBOL(system_serial_high);
 
-unsigned char system_diamond_serial[16 + 1] = {0};  /* 16 alphanumeric digits */
-EXPORT_SYMBOL(system_diamond_serial);
-
 unsigned int elf_hwcap;
 EXPORT_SYMBOL(elf_hwcap);
 
@@ -639,7 +636,6 @@ static int __init parse_tag_serialnr(const struct tag *tag)
 {
 	system_serial_low = tag->u.serialnr.low;
 	system_serial_high = tag->u.serialnr.high;
-	strncpy(system_diamond_serial, tag->u.serialnr.diamond_serial, sizeof(system_diamond_serial));
 	return 0;
 }
 

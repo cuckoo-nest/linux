@@ -88,7 +88,6 @@ struct tag_initrd {
 struct tag_serialnr {
 	__u32 low;
 	__u32 high;
-	__u8  diamond_serial[16 + 1];  /* 16 alphanumeric digits */
 };
 
 /* board revision */

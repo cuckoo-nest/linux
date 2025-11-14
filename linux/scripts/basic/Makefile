@@ -9,8 +9,6 @@
 # fixdep: 	 Used to generate dependency information during build process
 # docproc:	 Used in Documentation/DocBook
 
-.NOTPARALLEL:
-
 hostprogs-y	:= fixdep docproc
 always		:= $(hostprogs-y)
 

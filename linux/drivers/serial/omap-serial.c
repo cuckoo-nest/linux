@@ -356,25 +356,17 @@ static inline irqreturn_t serial_omap_irq(int irq, void *dev_id)
 		return IRQ_NONE;
 
 	spin_lock_irqsave(&up->port.lock, flags);
-
-
 	lsr = serial_in(up, UART_LSR);
 	if (iir & UART_IIR_RLSI) {
 		if (!up->use_dma) {
 			if (lsr & UART_LSR_DR)
-			{
 				receive_chars(up, &lsr);
-				pm_wakeup_event(&up->pdev->dev, 0);
-			}
 		} else {
 			up->ier &= ~(UART_IER_RDI | UART_IER_RLSI);
 			serial_out(up, UART_IER, up->ier);
 			if ((serial_omap_start_rxdma(up) != 0) &&
 					(lsr & UART_LSR_DR))
-			{
 				receive_chars(up, &lsr);
-				pm_wakeup_event(&up->pdev->dev, 0);
-			}
 		}
 	}
 
@@ -1284,8 +1276,6 @@ static int serial_omap_probe(struct platform_device *pdev)
 		goto do_release_region;
 
 	platform_set_drvdata(pdev, up);
-
-	device_init_wakeup(&up->pdev->dev, true);
 	return 0;
 err:
 	dev_err(&pdev->dev, "[UART%d]: failure [%s]: %d\n",
@@ -1304,8 +1294,6 @@ static int serial_omap_remove(struct platform_device *dev)
 		uart_remove_one_port(&serial_omap_reg, &up->port);
 		kfree(up);
 	}
-
-	device_init_wakeup(&dev->dev, false);
 	return 0;
 }
 

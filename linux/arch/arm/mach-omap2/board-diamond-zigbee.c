@@ -13,7 +13,6 @@
  */
 
 #include <linux/gpio.h>
-#include <linux/interrupt.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
@@ -32,11 +31,8 @@
 
 /* Function Prototypes */
 
-static int diamond_zigbee_suspend(struct platform_device *pdev);
-static int diamond_zigbee_resume(struct platform_device *pdev);
 static int __devinit diamond_zigbee_probe(struct platform_device *pdev);
 static int __devexit diamond_zigbee_remove(struct platform_device *pdev);
-
 
 /* Global Variables */
 
@@ -45,9 +41,7 @@ static struct platform_driver diamond_zigbee_driver = {
        .name	= "diamond-zigbee",
    },
    .probe		= diamond_zigbee_probe,
-   .remove		= __devexit_p(diamond_zigbee_remove),
-   .resume		= diamond_zigbee_resume,
-   .suspend		= diamond_zigbee_suspend,
+   .remove		= __devexit_p(diamond_zigbee_remove)
 };
 
 static int __devinit diamond_zigbee_probe(struct platform_device *pdev)
@@ -125,27 +119,6 @@ static void __exit diamond_zigbee_exit(void)
 {
 	platform_driver_unregister(&diamond_zigbee_driver);
 }
-
-static int diamond_zigbee_suspend(struct platform_device *pdev)
-{
-	struct diamond_zigbee_platform_data *pdata = pdev->dev.platform_data;
-	if(gpio_is_valid(pdata->interrupt_gpio))
-	{
-		enable_irq_wake(gpio_to_irq(pdata->interrupt_gpio));
-	}
-	return 0;
-}
-
-static int diamond_zigbee_resume(struct platform_device *pdev)
-{
-	struct diamond_zigbee_platform_data *pdata = pdev->dev.platform_data;
-	if(gpio_is_valid(pdata->interrupt_gpio))
-	{
-		disable_irq_wake(gpio_to_irq(pdata->interrupt_gpio));
-	}
-	return 0;
-}
-
 
 module_init(diamond_zigbee_init);
 module_exit(diamond_zigbee_exit);

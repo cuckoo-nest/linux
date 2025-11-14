@@ -81,11 +81,38 @@ ENTRY(vfp_support_entry)
 	orr	r1, r1, #FPEXC_EN	@ user FPEXC has the enable bit set
 	ldr	r4, [r3, r11, lsl #2]	@ last_VFP_context pointer
 	bic	r5, r1, #FPEXC_EX	@ make sure exceptions are disabled
-@	Always restore the vfp state since we saved it last time
+	cmp	r4, r10
+	beq	check_for_exception	@ we are returning to the same
+					@ process, so the registers are
+					@ still there.  In this case, we do
+					@ not want to drop a pending exception.
 
 	VFPFMXR	FPEXC, r5		@ enable VFP, disable any pending
 					@ exceptions, so we can get at the
 					@ rest of it
+
+#ifndef CONFIG_SMP
+	@ Save out the current registers to the old thread state
+	@ No need for SMP since this is not done lazily
+
+	DBGSTR1	"save old state %p", r4
+	cmp	r4, #0
+	beq	no_old_VFP_process
+	VFPFSTMIA r4, r5		@ save the working registers
+	VFPFMRX	r5, FPSCR		@ current status
+#ifndef CONFIG_CPU_FEROCEON
+	tst	r1, #FPEXC_EX		@ is there additional state to save?
+	beq	1f
+	VFPFMRX	r6, FPINST		@ FPINST (only if FPEXC.EX is set)
+	tst	r1, #FPEXC_FP2V		@ is there an FPINST2 to read?
+	beq	1f
+	VFPFMRX	r8, FPINST2		@ FPINST2 if needed (and present)
+1:
+#endif
+	stmia	r4, {r1, r5, r6, r8}	@ save FPEXC, FPSCR, FPINST, FPINST2
+					@ and point r4 at the word at the
+					@ start of the register dump
+#endif
 
 no_old_VFP_process:
 	DBGSTR1	"load state %p", r10

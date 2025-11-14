@@ -265,7 +265,6 @@ static irqreturn_t adbs_a330_irq(int irq, void *dev_id)
 {
 	struct adbs_a330_data *data = dev_id;
 
-	pm_wakeup_event(&data->client->dev, 0);
 	adbs_a330_i2c_reschedule_work(data, 0);
 
 	return IRQ_HANDLED;
@@ -751,8 +750,6 @@ static int __devinit adbs_a330_probe(struct i2c_client *client,
 		goto exit_disable_wake;
 	}
 
-	device_init_wakeup(&client->dev, 1);
-
 	/* Initialize the Avago chip */
 	err = adbs_a330_init_client(client);
 	if (err) {
@@ -835,8 +832,6 @@ static int __devexit adbs_a330_remove(struct i2c_client *client)
 	adbs_a330_gpio_unexport_and_free(rot->shutdown_gpio);
 	adbs_a330_gpio_unexport_and_free(rot->reset_gpio);
 	input_unregister_device(rot->input);
-
-	device_init_wakeup(&client->dev, 0);
 
 	if (rot->vdd != NULL)
 		regulator_put(rot->vdd);

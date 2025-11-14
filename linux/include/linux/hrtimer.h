@@ -22,7 +22,7 @@
 #include <linux/wait.h>
 #include <linux/percpu.h>
 #include <linux/timer.h>
-#include <linux/timerqueue.h>
+
 
 struct hrtimer_clock_base;
 struct hrtimer_cpu_base;
@@ -79,8 +79,8 @@ enum hrtimer_restart {
 
 /**
  * struct hrtimer - the basic hrtimer structure
- * @node:	timerqueue node, which also manages node.expires,
- *		the absolute expiry time in the hrtimers internal
+ * @node:	red black tree node for time ordered insertion
+ * @_expires:	the absolute expiry time in the hrtimers internal
  *		representation. The time is related to the clock on
  *		which the timer is based. Is setup by adding
  *		slack to the _softexpires value. For non range timers
@@ -101,7 +101,8 @@ enum hrtimer_restart {
  * The hrtimer structure must be initialized by hrtimer_init()
  */
 struct hrtimer {
-	struct timerqueue_node		node;
+	struct rb_node			node;
+	ktime_t				_expires;
 	ktime_t				_softexpires;
 	enum hrtimer_restart		(*function)(struct hrtimer *);
 	struct hrtimer_clock_base	*base;
@@ -140,7 +141,8 @@ struct hrtimer_sleeper {
 struct hrtimer_clock_base {
 	struct hrtimer_cpu_base	*cpu_base;
 	clockid_t		index;
-	struct timerqueue_head	active;
+	struct rb_root		active;
+	struct rb_node		*first;
 	ktime_t			resolution;
 	ktime_t			(*get_time)(void);
 	ktime_t			softirq_time;
@@ -149,12 +151,7 @@ struct hrtimer_clock_base {
 #endif
 };
 
-enum  hrtimer_base_type {
-	HRTIMER_BASE_REALTIME,
-	HRTIMER_BASE_MONOTONIC,
-	HRTIMER_BASE_BOOTTIME,
-	HRTIMER_MAX_CLOCK_BASES,
-};
+#define HRTIMER_MAX_CLOCK_BASES 2
 
 /*
  * struct hrtimer_cpu_base - the per cpu clock bases
@@ -187,43 +184,43 @@ struct hrtimer_cpu_base {
 
 static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
 {
-	timer->node.expires = time;
+	timer->_expires = time;
 	timer->_softexpires = time;
 }
 
 static inline void hrtimer_set_expires_range(struct hrtimer *timer, ktime_t time, ktime_t delta)
 {
 	timer->_softexpires = time;
-	timer->node.expires = ktime_add_safe(time, delta);
+	timer->_expires = ktime_add_safe(time, delta);
 }
 
 static inline void hrtimer_set_expires_range_ns(struct hrtimer *timer, ktime_t time, unsigned long delta)
 {
 	timer->_softexpires = time;
-	timer->node.expires = ktime_add_safe(time, ns_to_ktime(delta));
+	timer->_expires = ktime_add_safe(time, ns_to_ktime(delta));
 }
 
 static inline void hrtimer_set_expires_tv64(struct hrtimer *timer, s64 tv64)
 {
-	timer->node.expires.tv64 = tv64;
+	timer->_expires.tv64 = tv64;
 	timer->_softexpires.tv64 = tv64;
 }
 
 static inline void hrtimer_add_expires(struct hrtimer *timer, ktime_t time)
 {
-	timer->node.expires = ktime_add_safe(timer->node.expires, time);
+	timer->_expires = ktime_add_safe(timer->_expires, time);
 	timer->_softexpires = ktime_add_safe(timer->_softexpires, time);
 }
 
 static inline void hrtimer_add_expires_ns(struct hrtimer *timer, u64 ns)
 {
-	timer->node.expires = ktime_add_ns(timer->node.expires, ns);
+	timer->_expires = ktime_add_ns(timer->_expires, ns);
 	timer->_softexpires = ktime_add_ns(timer->_softexpires, ns);
 }
 
 static inline ktime_t hrtimer_get_expires(const struct hrtimer *timer)
 {
-	return timer->node.expires;
+	return timer->_expires;
 }
 
 static inline ktime_t hrtimer_get_softexpires(const struct hrtimer *timer)
@@ -233,7 +230,7 @@ static inline ktime_t hrtimer_get_softexpires(const struct hrtimer *timer)
 
 static inline s64 hrtimer_get_expires_tv64(const struct hrtimer *timer)
 {
-	return timer->node.expires.tv64;
+	return timer->_expires.tv64;
 }
 static inline s64 hrtimer_get_softexpires_tv64(const struct hrtimer *timer)
 {
@@ -242,12 +239,12 @@ static inline s64 hrtimer_get_softexpires_tv64(const struct hrtimer *timer)
 
 static inline s64 hrtimer_get_expires_ns(const struct hrtimer *timer)
 {
-	return ktime_to_ns(timer->node.expires);
+	return ktime_to_ns(timer->_expires);
 }
 
 static inline ktime_t hrtimer_expires_remaining(const struct hrtimer *timer)
 {
-	return ktime_sub(timer->node.expires, timer->base->get_time());
+    return ktime_sub(timer->_expires, timer->base->get_time());
 }
 
 #ifdef CONFIG_HIGH_RES_TIMERS
@@ -315,7 +312,6 @@ static inline int hrtimer_is_hres_active(struct hrtimer *timer)
 
 extern ktime_t ktime_get(void);
 extern ktime_t ktime_get_real(void);
-extern ktime_t ktime_get_boottime(void);
 
 
 DECLARE_PER_CPU(struct tick_device, tick_cpu_device);
