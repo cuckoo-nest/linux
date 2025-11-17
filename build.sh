@@ -8,7 +8,8 @@ echo $SCRIPT_DIR
 
 NEEDED_TOOLS=""
 DEF_CONFIG="$SCRIPT_DIR/configs/gtvhacker/defconfig"
-ROOTFS_PATH="$SCRIPT_DIR/rootfs/gtvhacker"
+ROOTFS_BASE="$SCRIPT_DIR/rootfs"
+ROOTFS_PATH="devices.cpio:busybox:terminfo:iptables:base"
 LOGO_PATH="$SCRIPT_DIR/logo/nest-logo-320x320.png"
 BUILD_TEMP="$SCRIPT_DIR/build-temp"
 BUILD_KMOD="$BUILD_TEMP/modules"
@@ -24,7 +25,7 @@ if [[ -f "$1" ]]; then
   DEF_CONFIG="$1"
 fi
 
-if [[ -e "$2" ]]; then
+if [[ -n "$2" ]]; then
   ROOTFS_PATH="$2"
 fi
 
@@ -33,7 +34,6 @@ if [[ -f "$3" ]]; then
 fi
 
 DEF_CONFIG="$(realpath "$DEF_CONFIG")"
-ROOTFS_PATH="$(realpath "$ROOTFS_PATH")"
 LOGO_PATH="$(realpath "$LOGO_PATH")"
 
 # Check for depmod
@@ -79,34 +79,59 @@ source toolchain/bootstrap.sh
     pnmtoplainpnm > "$SCRIPT_DIR/linux/drivers/video/logo/logo_diamond_clut224.ppm"
 )
 
-# Pack the rootfs cpio
-#
-# Unpack with the following command in destination directory:
-# sudo cpio -H newc -ivdm --no-absolute-filenames -I "file_path.cpio"
-if [[ ! "$ROOTFS_PATH" == *".cpio" ]]; then
-  (
-    cd "$ROOTFS_PATH" || exit 1
-    FOLDERS=""
-
-    if [[ -f "./folders.txt" ]]; then
-      FOLDERS="$(cat ./folders.txt)"
-
-      cat ./folders.txt | while read folder; do
-        if [[ -n "$folder" ]]; then
-          mkdir -p "$folder" || exit 0
-        fi
-      done
-
-      rm ./folders.txt
-    fi
-    
-    fakeroot bash -c "cpio -H newc -ivdmu --no-absolute-filenames -I \"$SCRIPT_DIR/rootfs/devices.cpio\" && find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc -O \"$NEW_ROOTFS\" || exit 1"
-    if [[ -n "$FOLDERS" ]]; then
-      echo "$FOLDERS" > ./folders.txt
-    fi
-  )
+if [[ -f "$ROOTFS_BASE/$ROOTFS_PATH" ]]; then
+  echo "Using existing rootfs cpio: \"$ROOTFS_PATH\""
+  cp "$ROOTFS_BASE/$ROOTFS_PATH" "$NEW_ROOTFS"
 else
-  cp "$ROOTFS_PATH" "$NEW_ROOTFS"
+  true | cpio -ov -H newc -O "$NEW_ROOTFS"
+
+  # Pack the rootfs cpio
+  #
+  # Unpack with the following command in destination directory:
+  # sudo cpio -H newc -ivdm --no-absolute-filenames -I "file_path.cpio"
+  echo -n "$ROOTFS_PATH:" | tr ':' '\n' | while read rootfs_item; do
+
+    [[ ! -n "$rootfs_item" ]] && continue   # skip empty entries
+    rootfs_item="$(realpath "$ROOTFS_BASE/$rootfs_item")"
+    if [[ ! "$rootfs_item" == *".cpio" ]]; then
+      (
+        cd "$rootfs_item" || exit 1
+        FOLDERS=""
+
+        if [[ -f "./folders.txt" ]]; then
+          FOLDERS="$(cat ./folders.txt)"
+
+          cat ./folders.txt | while read folder; do
+            if [[ -n "$folder" ]]; then
+              mkdir -p "$folder" || exit 0
+            fi
+          done
+
+          rm ./folders.txt
+        fi
+        
+        echo "Packing \"$rootfs_item\" into \"$NEW_ROOTFS\"..."
+        fakeroot bash -c "find . -print0 | LC_ALL=C sort -z | cpio -o0 -H newc -AO \"$NEW_ROOTFS\" || exit 1"
+        if [[ -n "$FOLDERS" ]]; then
+          echo "$FOLDERS" > ./folders.txt
+        fi
+      )
+    else
+      rootfs_temp="$(mktemp -dp "$BUILD_TEMP")"
+      echo "Packing \"$rootfs_item\" into \"$NEW_ROOTFS\"..."
+      (
+        cd "$rootfs_temp" || exit 1
+        fakeroot bash -c "cpio -H newc -idm --no-absolute-filenames -I \"$rootfs_item\" && find . -print0 | LC_ALL=C sort -z | cpio -o0 -H newc -AO \"$NEW_ROOTFS\" || exit 1"
+      )
+    fi
+  done
+
+  (
+    rootfs_temp="$(mktemp -dp "$BUILD_TEMP")"
+    echo "Repacking \"$NEW_ROOTFS\" to ensure proper ordering..."
+    cd "$rootfs_temp" || exit 1
+    fakeroot bash -c "pwd && cpio -H newc -id --no-absolute-filenames -uI \"$NEW_ROOTFS\" && find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc -O \"$NEW_ROOTFS\" || exit 1"
+  )
 fi
 
 ROOTFS_PATH="$NEW_ROOTFS"

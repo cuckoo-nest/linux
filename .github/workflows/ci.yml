@@ -18,20 +18,22 @@ jobs:
       matrix:
         include:
           - config: ./configs/gtvhacker/defconfig
-            rootfs: ./rootfs/gtvhacker
+            rootfs: devices.cpio:busybox:terminfo:iptables:dropbear:base
             logo: ./logo/gtvhacker.png
 
           - name: gtvhacker_original_cpio
             config: ./configs/gtvhacker/defconfig
-            rootfs: ./rootfs/nestdfuattack.cpio
+            rootfs: nestdfuattack.cpio
             logo: ./logo/gtvhacker.png
 
           - name: gtvhacker_original_repacked
             config: ./configs/gtvhacker/defconfig
-            rootfs: ./rootfs/repacked.cpio
+            rootfs: :repacked.cpio
             logo: ./logo/gtvhacker.png
             
-          - config: ./configs/rndis/defconfig
+          - name: rndis
+            config: ./configs/rndis/defconfig
+            rootfs: devices.cpio:busybox:terminfo:iptables:dropbear:base:rndis
             logo: ./logo/cuckoo.png
           
           - config: ./configs/j49/release_defconfig
@@ -60,7 +62,7 @@ jobs:
         uses: cuckoo-nest/toolchain@main
 
       - name: Run build script
-        run: ./build.sh "${{ matrix.config }}" "${{ matrix.rootfs || './rootfs/gtvhacker' }}" "${{ matrix.logo || './logo/nest-logo-320x320.png' }}"
+        run: ./build.sh "${{ matrix.config }}" "${{ matrix.rootfs || 'devices.cpio:busybox:terminfo:base' }}" "${{ matrix.logo || './logo/nest-logo-320x320.png' }}"
 
       - name: List cpio contents
         run: |
