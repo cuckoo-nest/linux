@@ -21,16 +21,20 @@ fi
 
 mkdir -p "$BUILD_TEMP" "$BUILD_KMOD"
 
-if [[ -f "$1" ]]; then
-  DEF_CONFIG="$1"
-fi
+if [[ -f "$1" ]] && [[ "$1" == *".env" ]]; then
+  source "$1"
+else
+  if [[ -f "$1" ]]; then
+    DEF_CONFIG="$1"
+  fi
 
-if [[ -n "$2" ]]; then
-  ROOTFS_PATH="$2"
-fi
+  if [[ -n "$2" ]]; then
+    ROOTFS_PATH="$2"
+  fi
 
-if [[ -f "$3" ]]; then
-  LOGO_PATH="$3"
+  if [[ -f "$3" ]]; then
+    LOGO_PATH="$3"
+  fi
 fi
 
 DEF_CONFIG="$(realpath "$DEF_CONFIG")"
@@ -156,10 +160,12 @@ ROOTFS_PATH="$NEW_ROOTFS"
 
   rm "$BUILD_KMOD/lib/modules/$KVER/build" "$BUILD_KMOD/lib/modules/$KVER/source"
   
-  (
-    cd "$BUILD_KMOD" || exit 1
-    fakeroot bash -c "find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc -AO \"$ROOTFS_PATH\" || exit 1"
-  )
+  if [[ "$NO_MODULES" != "y" ]]; then
+    (
+      cd "$BUILD_KMOD" || exit 1
+      fakeroot bash -c "find . -print0 | LC_ALL=C sort -z | cpio -ov0 -H newc -AO \"$ROOTFS_PATH\" || exit 1"
+    )
+  fi
   
   gzip -kf9 "$ROOTFS_PATH"
   mkimage -A arm -O linux -T multi -C none \
