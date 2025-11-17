@@ -1,0 +1,9 @@
+./media
+./media/data
+./media/dropbox
+./media/log
+./media/root0
+./media/root1
+./media/scratch
+./media/system-config
+./media/user-config
