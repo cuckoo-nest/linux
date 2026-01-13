@@ -10,22 +10,29 @@ on:
       - '*'
 
 jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build matrix JSON from *.env files
+        id: build-matrix
+        run: |
+          # Find all .env files in the repo, build JSON array [{ "config": "file.env" }, ...]
+          MATRIX_JSON=$(ls -1 *.env | jq -Rsc 'split("\n") | map(select(length>0) | {config:.})')
+          echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: generate-matrix
     runs-on: ubuntu-latest
     continue-on-error: true
 
     strategy:
       matrix:
-        include:
-          - config: ./configs/gtvhacker/defconfig
-            rootfs: ./rootfs/gtvhacker
-            logo: ./logo/gtvhacker.png
-            
-          - config: ./configs/rndis/defconfig
-          
-          - config: ./configs/j49/release_defconfig
-          - config: ./configs/diamond/release_defconfig
-
+        include: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,6 +46,8 @@ jobs:
           
           sudo apt update
           sudo apt install -y \
+            kmod \
+            fakeroot \
             cpio \
             u-boot-tools \
             netpbm
@@ -47,11 +56,21 @@ jobs:
         uses: cuckoo-nest/toolchain@main
 
       - name: Run build script
-        run: ./build.sh "${{ matrix.config }}" "${{ matrix.rootfs || './rootfs/gtvhacker' }}" "${{ matrix.logo || './logo/nest-logo-320x320.png' }}"
-        
+        run: ./build.sh "${{ matrix.config }}"
+
+      - name: List cpio contents
+        run: |
+          cpio -ivt < ./initramfs_data.cpio
+
       - name: Get artifact name
         id: artifact_name
         run: |
+          if [[ "${{ matrix.config }}" == *".env" ]]; then
+            NAME="$(basename "${{ matrix.config }}" .env)"
+            echo "name=$NAME" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           NAME="$(echo -n "${{ matrix.config }}" | sed 's/^.\/configs\///' | sed -e 's/\//_/g' | sed -e 's/_defconfig$//')"
           echo "name=$NAME" >> $GITHUB_OUTPUT
 
@@ -60,7 +79,5 @@ jobs:
         with:
           name: ${{ matrix.name || steps.artifact_name.outputs.name }}
           path: |
-            ./linux/arch/arm/boot/Image
             ./linux/arch/arm/boot/uImage
             ./linux/arch/arm/boot/zImage
-            ./initramfs_data.cpio

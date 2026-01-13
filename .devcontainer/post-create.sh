@@ -1,6 +1,7 @@
 #!/bin/bash
 sudo apt update
 sudo apt install -y \
+  fakeroot \
   cpio \
   u-boot-tools \
   netpbm

@@ -1,0 +1,19 @@
+#!/bin/sh
+/bin/sleep 2
+
+/bin/mount -a
+
+for f in /sys/devices/virtual/usb_composite/*/enable; do
+  [ -f "$f" ] && /bin/echo 0 > "$f"
+done
+
+/bin/echo peripheral > /sys/devices/platform/musb-omap2430.0/musb-hdrc.0/mode
+
+# load g_ether with example MACs
+/bin/modprobe -r g_ether   # remove if already loaded
+/bin/modprobe g_ether host_addr=00:90:27:A7:7F:B5 dev_addr=00:90:27:A7:7F:B6 idVendor=0x04e8 idProduct=0x6863 iManufacturer="Cuckoo Nest" iProduct="RNDIS Gadget"
+
+/bin/ip link set usb0 up
+/bin/ip addr add 169.254.13.37/16 dev usb0
+
+/bin/dropbear -B
